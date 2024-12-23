@@ -10,6 +10,9 @@
   List.iter (fun (s, k) -> Hashtbl.add h s k)
     [ "print",    PRINT;
       "main",     MAIN;
+      "if",     IF;
+      "while",     WHILE;
+      "return",     RETURN;
     ] ;
   fun s ->
     try  Hashtbl.find h s
@@ -29,14 +32,40 @@ rule token = parse
   | "//" [^ '\n']* "\n"  { new_line lexbuf; token lexbuf }
   | "/*"                 { comment lexbuf; token lexbuf }
 
+  | "true" {BOOL(true)}
+  | "false" {BOOL(false)}
+  
   | number as n  { INT(int_of_string n) }
   | ident as id  { keyword_or_ident id }
 
+
+  (* Meta *)
   | ";"  { SEMI }
   | "("  { LPAR }
   | ")"  { RPAR }
   | "{"  { BEGIN }
   | "}"  { END }
+
+  (* Arithmetique *)
+  | "+"  { ADD } 
+  | "-"  { SUB }
+  | "/"  { DIV }
+  | "*"  { MUL } 
+  | "%"  { REM }
+
+  (* Logique booleenne *)
+  | "<"  { LT }
+  | "<=" { LE } 
+  | ">"  { GT }
+  | ">=" { GE }
+  | "==" { EQ }
+  | "!=" { NEQ }
+  | "&&" { AND }
+  | "||" { OR }
+
+  (* Instructions *)
+  | "=" { SET }
+
 
   | _    { raise (Error ("unknown character : " ^ lexeme lexbuf)) }
   | eof  { EOF }

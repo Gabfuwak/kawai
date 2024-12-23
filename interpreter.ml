@@ -33,11 +33,46 @@ let exec_prog (p: program): unit =
         
     and eval (e: expr): value = match e with
       | Int n  -> VInt n
-      | _ -> failwith "case not implemented in eval"
+      | Bool b -> VBool b
+      | Binop (op, e1, e2) ->(
+          let v1 = eval e1 in
+          let v2 = eval e2 in
+          match op, v1, v2 with
+          | Add, VInt n1, VInt n2 -> VInt(n1 + n2)
+          | Sub, VInt n1, VInt n2 -> VInt(n1 - n2)
+          | Mul, VInt n1, VInt n2 -> VInt(n1 * n2)
+          | Div, VInt n1, VInt n2 -> 
+              if n2 = 0 then raise (Error "Divison by zero");
+              VInt(n1 / n2)
+          | Rem, VInt n1, VInt n2 -> 
+              if n2 = 0 then raise (Error "Modulo by zero"); 
+              VInt(n1 mod n2)
+          
+          | Lt, VInt n1, VInt n2 -> VBool(n1 < n2) 
+          | Le, VInt n1, VInt n2 -> VBool(n1 <= n2) 
+          | Gt, VInt n1, VInt n2 -> VBool(n1 > n2) 
+          | Ge, VInt n1, VInt n2 -> VBool(n1 >= n2)
+          
+          | Eq, _, _ -> VBool(v1 = v2)
+          | Neq, _, _ -> VBool(v1 <> v2)
+          
+          | And, VBool b1, VBool b2 -> VBool(b1 && b2)
+          | Or, VBool b1, VBool b2 -> VBool(b1 || b2)
+
+          | _ -> raise (Error "Unknown operation");
+      )
+      | _ -> raise (Error "Unknown operation"); 
+      
     in
   
     let rec exec (i: instr): unit = match i with
-      | Print e -> Printf.printf "%d\n" (evali e)
+      | Print e ->( 
+          match eval e with
+          | VInt n -> Printf.printf "%d\n" n
+          | VBool b -> Printf.printf "%b\n" b
+          | Null -> Printf.printf "null"
+          | _ -> Printf.printf "Type not printable yet!"
+          )
       | _ -> failwith "case not implemented in exec"
     and exec_seq s = 
       List.iter exec s

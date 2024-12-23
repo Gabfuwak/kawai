@@ -21,6 +21,31 @@ let typecheck_prog p =
 
   and type_expr e tenv = match e with
     | Int _  -> TInt
+    | Bool _ -> TBool
+    | Binop(op, e1, e2) ->(
+        let type_e1 = type_expr e1 tenv in
+        let type_e2 = type_expr e2 tenv in
+        match op with
+        | Add | Sub | Mul | Div | Rem ->
+            if type_e1 <> TInt then type_error type_e1 TInt;
+            if type_e2 <> TInt then type_error type_e2 TInt;
+            TInt
+
+        | Lt | Le | Gt | Ge ->
+            if type_e1 <> TInt then type_error type_e1 TInt;
+            if type_e2 <> TInt then type_error type_e2 TInt;
+            TBool
+
+        | Eq | Neq ->
+            if type_e1 <> type_e2 then type_error type_e2 type_e1;
+            TBool
+
+        | And | Or ->
+            if type_e1 <> TBool then type_error type_e1 TBool;
+            if type_e2 <> TBool then type_error type_e2 TBool;
+            TBool
+        | _ -> failwith "To be implemented";
+    )
     | _ -> failwith "case not implemented in type_expr"
 
   and type_mem_access m tenv = match m with
@@ -28,7 +53,12 @@ let typecheck_prog p =
   in
 
   let rec check_instr i ret tenv = match i with
-    | Print e -> check e TInt tenv
+    | Print e ->
+      let type_e = type_expr e tenv in
+      (match type_e with
+      | TInt | TBool -> ()
+      | _ -> type_error type_e TInt; (*TODO: Modifier ça pour accepter uniquement des string, pour l'instant c'est du debug et print est très minimal*)
+      )
     | _ -> failwith "case not implemented in check_instr"
   and check_seq s ret tenv =
     List.iter (fun i -> check_instr i ret tenv) s
