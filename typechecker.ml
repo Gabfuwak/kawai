@@ -22,6 +22,7 @@ let typecheck_prog p =
   and type_expr e tenv = match e with
     | Int _  -> TInt
     | Bool _ -> TBool
+    | Get(m) -> type_mem_access m tenv
     | Binop(op, e1, e2) ->(
         let type_e1 = type_expr e1 tenv in
         let type_e2 = type_expr e2 tenv in
@@ -49,6 +50,8 @@ let typecheck_prog p =
     | _ -> failwith "case not implemented in type_expr"
 
   and type_mem_access m tenv = match m with
+    | Var x -> (try Env.find tenv x
+                with Not_found -> error("Undefined variable"))
     | _ -> failwith "case not implemented in type_mem_access"
   in
 
@@ -59,6 +62,9 @@ let typecheck_prog p =
       | TInt | TBool -> ()
       | _ -> type_error type_e TInt; (*TODO: Modifier ça pour accepter uniquement des string, pour l'instant c'est du debug et print est très minimal*)
       )
+    | Set(m, e) ->
+        let typ_m = type_mem_access m tenv in
+        check e typ_m tenv
     | _ -> failwith "case not implemented in check_instr"
   and check_seq s ret tenv =
     List.iter (fun i -> check_instr i ret tenv) s

@@ -13,6 +13,10 @@
       "if",     IF;
       "while",     WHILE;
       "return",     RETURN;
+      "int", INT_TYPE;
+      "bool", BOOL_TYPE;
+      "void", VOID;
+      "var", VAR;
     ] ;
   fun s ->
     try  Hashtbl.find h s

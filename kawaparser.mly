@@ -5,6 +5,7 @@
 
 %}
 
+%token INT_TYPE BOOL_TYPE VOID VAR
 %token <int> INT
 %token <string> IDENT
 %token <bool> BOOL
@@ -29,18 +30,36 @@
 %%
 
 program:
-| MAIN BEGIN main=list(instruction) END EOF
+| vlist=list(var_decl) MAIN BEGIN main=list(instruction) END EOF
     { {classes=[]; globals=[]; main} }
 ;
 
+typ:
+| b=BOOL_TYPE {TBool}
+| n=INT_TYPE {TInt}
+| v=VOID {TVoid}
+ (*TODO: | classes id=IDENT {}*)
+;
+
+var_decl:
+| VAR t=typ id=IDENT SEMI { (id, t) }
+;
+
+
 instruction:
 | PRINT LPAR e=expression RPAR SEMI { Print(e) }
+| id=mem_access SET e=expression SEMI { Set(id, e) }
 ;
+
+mem_access:
+| id=IDENT {Var(id)}
+;
+
 
 expression:
 (* Terminaux *)
 | n=INT  { Int(n) }
-| b=BOOL { Bool(b) }
+| b=BOOL { Bool(b) } 
 
 (* Support parentheses *)
 | LPAR e=expression RPAR { e }
@@ -61,5 +80,8 @@ expression:
 | e1=expression NEQ e2=expression {Binop(Neq, e1, e2)}
 | e1=expression AND e2=expression {Binop(And, e1, e2)}
 | e1=expression OR  e2=expression {Binop(Or, e1, e2)}
+
+(* Variables *)
+| m=mem_access {Get(m)}
 
 ;

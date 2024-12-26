@@ -34,6 +34,13 @@ let exec_prog (p: program): unit =
     and eval (e: expr): value = match e with
       | Int n  -> VInt n
       | Bool b -> VBool b
+      | Get(Var x) ->( 
+          try Hashtbl.find lenv x
+          with Not_found ->
+            try Hashtbl.find env x
+            with Not_found ->
+              raise (Error ("undefined variable: " ^ x))
+      )
       | Binop (op, e1, e2) ->(
           let v1 = eval e1 in
           let v2 = eval e2 in
@@ -73,6 +80,14 @@ let exec_prog (p: program): unit =
           | Null -> Printf.printf "null"
           | _ -> Printf.printf "Type not printable yet!"
           )
+      | Set(Var x, e) -> (
+          let v = eval e in 
+          try Hashtbl.replace lenv x v
+          with Not_found ->
+            try Hashtbl.replace env x v 
+            with Not_found ->
+              raise (Error ("undefined variable " ^ x))
+      )
       | _ -> failwith "case not implemented in exec"
     and exec_seq s = 
       List.iter exec s
