@@ -2,8 +2,10 @@ var int x;
 var bool b;
 
 main {
-  x = 42;
+  x = 15 + -42 * 10 - -25;
   print(x);
   b = true;
-  print(b);
+  print(!b);
 }
+
+

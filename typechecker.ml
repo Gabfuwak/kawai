@@ -23,6 +23,16 @@ let typecheck_prog p =
     | Int _  -> TInt
     | Bool _ -> TBool
     | Get(m) -> type_mem_access m tenv
+    | Unop(op, e) ->(
+      let type_e = type_expr e tenv in
+      match op with
+      | Opp -> 
+          if type_e <> TInt then type_error type_e TInt;
+          TInt
+      | Not ->
+          if type_e <> TBool then type_error type_e TBool;
+          TBool
+    )
     | Binop(op, e1, e2) ->(
         let type_e1 = type_expr e1 tenv in
         let type_e2 = type_expr e2 tenv in

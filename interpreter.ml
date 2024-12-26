@@ -41,6 +41,13 @@ let exec_prog (p: program): unit =
             with Not_found ->
               raise (Error ("undefined variable: " ^ x))
       )
+      | Unop (op, e) ->(
+          let v = eval e in
+          match op, v with
+          | Opp, VInt v -> VInt(-v)
+          | Not, VBool v -> VBool(not v)
+          | _ -> raise (Error "Unkown operation (unop eval) ");
+      )
       | Binop (op, e1, e2) ->(
           let v1 = eval e1 in
           let v2 = eval e2 in
@@ -66,9 +73,9 @@ let exec_prog (p: program): unit =
           | And, VBool b1, VBool b2 -> VBool(b1 && b2)
           | Or, VBool b1, VBool b2 -> VBool(b1 || b2)
 
-          | _ -> raise (Error "Unknown operation");
+          | _ -> raise (Error "Unknown operation (binop eval)");
       )
-      | _ -> raise (Error "Unknown operation"); 
+      | _ -> raise (Error "Unknown operation (main eval)"); 
       
     in
   

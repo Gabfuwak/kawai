@@ -66,6 +66,7 @@ rule token = parse
   | "!=" { NEQ }
   | "&&" { AND }
   | "||" { OR }
+  | "!"  { NOT }
 
   (* Instructions *)
   | "=" { SET }

@@ -12,17 +12,21 @@
 %token MAIN
 %token LPAR RPAR BEGIN END SEMI
 %token ADD SUB MUL DIV REM
-%token LT LE GT GE EQ NEQ AND OR
+%token LT LE GT GE EQ NEQ AND OR NOT
 %token PRINT
 %token EOF
 
 %token IF WHILE RETURN SET
 
+%token USUB (* moins unaire, n'existe que pour le %nonassoc *)
+
 (* Precedence *)
-%left LT LE GT GE EQ NEQ AND OR
+%left NOT LT LE GT GE EQ NEQ AND OR
 %left ADD SUB
 %left DIV REM
 %left MUL
+
+%nonassoc USUB (* Pour regler le conflit entre le moins binaire et unaire *)
 
 %start program
 %type <Kawa.program> program
@@ -70,6 +74,7 @@ expression:
 | e1=expression MUL e2=expression {Binop(Mul, e1, e2)}
 | e1=expression DIV e2=expression {Binop(Div, e1, e2)}
 | e1=expression REM e2=expression {Binop(Rem, e1, e2)}
+| SUB e=expression %prec USUB { Unop(Opp, e)}
 
 (* Logique booleene *)
 | e1=expression LT  e2=expression {Binop(Lt, e1, e2)}
@@ -80,6 +85,7 @@ expression:
 | e1=expression NEQ e2=expression {Binop(Neq, e1, e2)}
 | e1=expression AND e2=expression {Binop(And, e1, e2)}
 | e1=expression OR  e2=expression {Binop(Or, e1, e2)}
+| NOT e=expression {Unop(Not, e)}
 
 (* Variables *)
 | m=mem_access {Get(m)}
