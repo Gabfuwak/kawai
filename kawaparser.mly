@@ -16,7 +16,7 @@
 %token PRINT
 %token EOF
 
-%token IF WHILE RETURN SET
+%token IF ELSE WHILE RETURN SET
 
 %token USUB (* moins unaire, n'existe que pour le %nonassoc *)
 
@@ -55,6 +55,19 @@ var_decl:
 instruction:
 | PRINT LPAR e=expression RPAR SEMI { Print(e) }
 | id=mem_access SET e=expression SEMI { Set(id, e) }
+| IF LPAR e=expression RPAR BEGIN instrlist=list(instruction) END elseblock=option(else_block) 
+  { match elseblock with
+    | None ->    If(e, instrlist, [])
+    | Some block ->  If(e, instrlist, block) }
+;
+
+
+else_block: (*renvoie une liste d'instructions*)
+| ELSE BEGIN instrlist=list(instruction) END { instrlist }
+| ELSE IF LPAR e=expression RPAR BEGIN instrlist=list(instruction) END elseblock=option(else_block)
+  { match elseblock with
+    | None ->    [If(e, instrlist, [])]
+    | Some block ->  [If(e, instrlist, block)] }
 ;
 
 mem_access:

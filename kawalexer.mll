@@ -10,13 +10,14 @@
   List.iter (fun (s, k) -> Hashtbl.add h s k)
     [ "print",    PRINT;
       "main",     MAIN;
-      "if",     IF;
-      "while",     WHILE;
-      "return",     RETURN;
-      "int", INT_TYPE;
-      "bool", BOOL_TYPE;
-      "void", VOID;
-      "var", VAR;
+      "if",       IF;
+      "else",     ELSE;
+      "while",    WHILE;
+      "return",   RETURN;
+      "int",      INT_TYPE;
+      "bool",     BOOL_TYPE;
+      "void",     VOID;
+      "var",      VAR;
     ] ;
   fun s ->
     try  Hashtbl.find h s

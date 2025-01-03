@@ -21,17 +21,17 @@ let exec_prog (p: program): unit =
     failwith "eval_call not implemented"
 
   and exec_seq s lenv =
-    let rec evali e = match eval e with
+    let rec evali e lenv = match eval e lenv with
       | VInt n -> n
       | _ -> assert false
-    and evalb e = match eval e with
+    and evalb e lenv = match eval e lenv with
       | VBool b -> b
       | _ -> assert false
-    and evalo e = match eval e with
+    and evalo e lenv = match eval e lenv with
       | VObj o -> o
       | _ -> assert false
         
-    and eval (e: expr): value = match e with
+    and eval (e: expr) (lenv: (string, value) Hashtbl.t): value = match e with
       | Int n  -> VInt n
       | Bool b -> VBool b
       | Get(Var x) ->( 
@@ -42,15 +42,15 @@ let exec_prog (p: program): unit =
               raise (Error ("undefined variable: " ^ x))
       )
       | Unop (op, e) ->(
-          let v = eval e in
+          let v = eval e lenv in
           match op, v with
           | Opp, VInt v -> VInt(-v)
           | Not, VBool v -> VBool(not v)
           | _ -> raise (Error "Unkown operation (unop eval) ");
       )
       | Binop (op, e1, e2) ->(
-          let v1 = eval e1 in
-          let v2 = eval e2 in
+          let v1 = eval e1 lenv in
+          let v2 = eval e2 lenv in
           match op, v1, v2 with
           | Add, VInt n1, VInt n2 -> VInt(n1 + n2)
           | Sub, VInt n1, VInt n2 -> VInt(n1 - n2)
@@ -79,28 +79,38 @@ let exec_prog (p: program): unit =
       
     in
   
-    let rec exec (i: instr): unit = match i with
+    let rec exec (i: instr) (lenv: (string, value) Hashtbl.t): unit = match i with
       | Print e ->( 
-          match eval e with
+          match eval e lenv with
           | VInt n -> Printf.printf "%d\n" n
           | VBool b -> Printf.printf "%b\n" b
           | Null -> Printf.printf "null"
           | _ -> Printf.printf "Type not printable yet!"
           )
       | Set(Var x, e) -> (
-          let v = eval e in 
+          let v = eval e lenv in 
           try Hashtbl.replace lenv x v
           with Not_found ->
             try Hashtbl.replace env x v 
             with Not_found ->
               raise (Error ("undefined variable " ^ x))
       )
+      | If(cond, blockif, blockelse) ->(
+        let c = match eval cond lenv with
+        | VBool b -> b
+        | _ -> failwith "unreachable: condition is not bool even after typechecking (things went real bad)"
+        in
+        if c then
+          exec_seq blockif lenv
+        else
+          exec_seq blockelse lenv
+      )
       | _ -> failwith "case not implemented in exec"
-    and exec_seq s = 
-      List.iter exec s
+    and exec_seq s lenv = 
+      List.iter (fun i -> exec i lenv) s
     in
 
-    exec_seq s
+    exec_seq s lenv
   in
   
   exec_seq p.main (Hashtbl.create 1)
