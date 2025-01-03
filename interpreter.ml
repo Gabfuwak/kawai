@@ -105,6 +105,11 @@ let exec_prog (p: program): unit =
         else
           exec_seq blockelse lenv
       )
+      | While(cond, block) ->(
+          while (evalb cond lenv) do
+            exec_seq block lenv;
+          done
+        )
       | _ -> failwith "case not implemented in exec"
     and exec_seq s lenv = 
       List.iter (fun i -> exec i lenv) s

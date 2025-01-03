@@ -1,36 +1,31 @@
 var int x;
-var int y;
-var bool a;
-var bool b;
+var int sum;
+var bool flag;
 
 main {
-    x = 5;
-    y = 10;
-    a = true;
-    b = false;
-
-    if (x + 3 > y - 2) {
-        print(1);
-    } else if (x * 2 == y) {
-        print(2);
-    } else if (x * 2 + 1 < y + 1) {
-        print(3);
+    x = 1;
+    sum = 0;
+    while (x <= 5) {
+        sum = sum + x;
+        x = x + 1;
     }
-
-    if (a && (x < y)) {
-        if (x * 2 == 10) {
-            print(4);
-        } else if (!b && (y == 10)) {
-            print(5);
+    print(sum);
+    
+    x = 1;
+    sum = 0;
+    while (x <= 3) {
+        sum = sum + x * x;
+        x = x + 1;
+    }
+    print(sum);
+    
+    x = 0;
+    flag = true;
+    while (flag) {
+        x = x + 1;
+        if (x >= 3) {
+            flag = false;
         }
     }
-
-    if ((x >= 0 && y <= 10) || (x == y && a)) {
-        print(6);
-    }
-
-    if (!(x > y) && (a || b)) {
-        print(7);
-    }
+    print(x);
 }
-

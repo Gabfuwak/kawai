@@ -75,10 +75,15 @@ let typecheck_prog p =
     | Set(m, e) ->
         let typ_m = type_mem_access m tenv in
         check e typ_m tenv;
-    | If(cond, blockif, blockelse) ->
+    | If(cond, blockif, blockelse) ->(
         check cond TBool tenv;
         check_seq blockif ret tenv;
         check_seq blockelse ret tenv;
+    )
+    | While(cond, block) ->(
+        check cond TBool tenv;
+        check_seq block ret tenv;
+    )
     | _ -> failwith "case not implemented in check_instr"
   and check_seq s ret tenv =
     List.iter (fun i -> check_instr i ret tenv) s
