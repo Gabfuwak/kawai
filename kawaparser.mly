@@ -21,6 +21,7 @@
 %token USUB (* moins unaire, n'existe que pour le %nonassoc *)
 
 (* Precedence *)
+%right NOT
 %left AND OR
 %left EQ NEQ
 %left LT LE GT GE
@@ -55,6 +56,7 @@ var_decl:
 instruction:
 | PRINT LPAR e=expression RPAR SEMI { Print(e) }
 | id=mem_access SET e=expression SEMI { Set(id, e) }
+| WHILE LPAR e=expression RPAR BEGIN instrlist=list(instruction) END { While(e, instrlist) }
 | IF LPAR e=expression RPAR BEGIN instrlist=list(instruction) END elseblock=option(else_block) 
   { match elseblock with
     | None ->    If(e, instrlist, [])
