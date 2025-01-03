@@ -21,7 +21,9 @@
 %token USUB (* moins unaire, n'existe que pour le %nonassoc *)
 
 (* Precedence *)
-%left NOT LT LE GT GE EQ NEQ AND OR
+%left AND OR
+%left EQ NEQ
+%left LT LE GT GE
 %left ADD SUB
 %left DIV REM
 %left MUL
