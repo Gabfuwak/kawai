@@ -22,6 +22,7 @@
       "attribute", ATTRIBUTE;
       "method",    METHOD;
       "this",      THIS;
+      "new",       NEW;
     ] ;
   fun s ->
     try  Hashtbl.find h s
