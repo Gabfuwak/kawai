@@ -8,16 +8,20 @@
   let keyword_or_ident =
   let h = Hashtbl.create 17 in
   List.iter (fun (s, k) -> Hashtbl.add h s k)
-    [ "print",    PRINT;
-      "main",     MAIN;
-      "if",       IF;
-      "else",     ELSE;
-      "while",    WHILE;
-      "return",   RETURN;
-      "int",      INT_TYPE;
-      "bool",     BOOL_TYPE;
-      "void",     VOID;
-      "var",      VAR;
+    [ "print",     PRINT;
+      "main",      MAIN;
+      "if",        IF;
+      "else",      ELSE;
+      "while",     WHILE;
+      "return",    RETURN;
+      "int",       INT_TYPE;
+      "bool",      BOOL_TYPE;
+      "void",      VOID;
+      "var",       VAR;
+      "class",     CLASS;
+      "attribute", ATTRIBUTE;
+      "method",    METHOD;
+      "this",      THIS;
     ] ;
   fun s ->
     try  Hashtbl.find h s
@@ -50,6 +54,8 @@ rule token = parse
   | ")"  { RPAR }
   | "{"  { BEGIN }
   | "}"  { END }
+  | "."  { DOT }
+  | ","  { COMMA }
 
   (* Arithmetique *)
   | "+"  { ADD } 
