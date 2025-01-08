@@ -3,7 +3,7 @@
 | Arithmétique         | OK        | OK                                       | OK                                       | OK                                       |
 | Variables            | OK        | OK                                       | OK                                       | OK                                       |
 | Instructions         | OK        | else/if<br>while<br>print(int/bool) only | else/if<br>while<br>print(int/bool) only | else/if<br>while<br>print(int/bool) only |
-| Classes et attributs |           |                                          |                                          |                                          |
+| Classes et attributs | OK        | OK                                       | OK                                       |                                          |
 | Méthodes             |           |                                          |                                          |                                          |
 | Héritage             |           |                                          |                                          |                                          |
 
