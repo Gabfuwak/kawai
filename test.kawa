@@ -1,31 +1,37 @@
 var int x;
-var int sum;
-var bool flag;
+var bool b;
+
+class point {
+  attribute int x;
+  attribute int y;
+}
+
+class colored_point {
+  attribute int r;
+  attribute int g;
+  attribute int b;
+  attribute point pos;
+}
 
 main {
-    x = 1;
-    sum = 0;
-    while (x <= 5) {
-        sum = sum + x;
-        x = x + 1;
-    }
-    print(sum);
-    
-    x = 1;
-    sum = 0;
-    while (x <= 3) {
-        sum = sum + x * x;
-        x = x + 1;
-    }
-    print(sum);
-    
-    x = 0;
-    flag = true;
-    while (flag) {
-        x = x + 1;
-        if (x >= 3) {
-            flag = false;
-        }
-    }
-    print(x);
+  // Test object creation and field access
+  pos = new point;
+  pos.x = 10;
+  pos.y = 20;
+  print(pos.x);
+  print(pos.y);
+  
+  // Test nested object creation and field access
+  cp = new colored_point;
+  cp.r = 255;
+  cp.g = 128;
+  cp.b = 0;
+  cp.pos = new point;
+  cp.pos.x = 100;
+  cp.pos.y = 200;
+  print(cp.r);
+  print(cp.pos.y);
 }
+
+
+

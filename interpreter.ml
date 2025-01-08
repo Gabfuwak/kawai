@@ -5,17 +5,23 @@ type value =
   | VBool of bool
   | VObj  of obj
   | Null
+  
 and obj = {
   cls:    string;
   fields: (string, value) Hashtbl.t;
 }
+
+module Env = Map.Make(String)
+type cenv = class_def Env.t
 
 exception Error of string
 exception Return of value
 
 let exec_prog (p: program): unit =
   let env = Hashtbl.create 16 in
+  let cenv = Hashtbl.create 16 in
   List.iter (fun (x, _) -> Hashtbl.add env x Null) p.globals;
+  List.iter (fun cls_def -> Hashtbl.add cenv cls_def.class_name cls_def) p.classes;
   
   let rec eval_call f this args =
     failwith "eval_call not implemented"
@@ -34,7 +40,7 @@ let exec_prog (p: program): unit =
     and eval (e: expr) (lenv: (string, value) Hashtbl.t): value = match e with
       | Int n  -> VInt n
       | Bool b -> VBool b
-      | Get(Var x) ->( 
+      | Get(Var x) ->(   
           try Hashtbl.find lenv x
           with Not_found ->
             try Hashtbl.find env x
@@ -75,6 +81,27 @@ let exec_prog (p: program): unit =
 
           | _ -> raise (Error "Unknown operation (binop eval)");
       )
+      | This -> ( 
+          try Hashtbl.find lenv "this"
+          with Not_found -> raise (Error "\"this\" called outside of class context");
+      )
+      | New class_name ->
+          let cls = try Hashtbl.find cenv class_name
+          with Not_found -> raise (Error ("Unknown class: \"" ^ class_name ^ "\""));
+          in
+          let fields = Hashtbl.create 16 in
+          List.iter (fun (attr_name, _) -> Hashtbl.add fields attr_name Null) cls.attributes;
+          VObj {cls=class_name; fields=fields}
+      | NewCstr(cls, args) -> failwith "TODO: implement constructor interpretation"
+      | Get(Field(e, f)) ->(
+          let obj = match eval e lenv with
+            | VObj o -> o
+            | _ -> raise (Error "Field access on non-object")
+          in
+          (try Hashtbl.find obj.fields f
+           with Not_found -> raise (Error ("unknown field " ^ f))
+           )
+        )
       | _ -> raise (Error "Unknown operation (main eval)"); 
       
     in
@@ -95,15 +122,22 @@ let exec_prog (p: program): unit =
             with Not_found ->
               raise (Error ("undefined variable " ^ x))
       )
+      | Set(Field(e, f), e2) ->
+          let obj = match eval e lenv with
+            | VObj o -> o 
+            | _ -> raise (Error "field assignment to non-object")
+          in
+          let v = eval e2 lenv in
+          Hashtbl.replace obj.fields f v
       | If(cond, blockif, blockelse) ->(
-        let c = match eval cond lenv with
-        | VBool b -> b
-        | _ -> failwith "unreachable: condition is not bool even after typechecking (things went real bad)"
-        in
-        if c then
-          exec_seq blockif lenv
-        else
-          exec_seq blockelse lenv
+          let c = match eval cond lenv with
+          | VBool b -> b
+          | _ -> failwith "unreachable: condition is not bool even after typechecking (things went real bad)"
+          in
+          if c then
+            exec_seq blockif lenv
+          else
+            exec_seq blockelse lenv
       )
       | While(cond, block) ->(
           while (evalb cond lenv) do
