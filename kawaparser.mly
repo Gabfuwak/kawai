@@ -21,6 +21,8 @@
 %token USUB (* moins unaire, n'existe que pour le %nonassoc *)
 
 (* Precedence *)
+%left DOT
+
 %right NOT
 %left AND OR
 %left EQ NEQ
@@ -37,7 +39,7 @@
 %%
 
 program:
-| vlist=list(var_decl) classes=list(class_def) MAIN BEGIN main=list(instruction) END EOF
+| vlist=list(var_decl) classes=list(class_def) MAIN BEGIN main=list(instr) END EOF
     { {classes=classes; globals=vlist; main} }
 ;
 
@@ -96,24 +98,24 @@ method_param:
 
 
 
-instruction:
+instr:
 | PRINT LPAR e=expression RPAR SEMI { Print(e) }
 | id=mem_access SET e=expression SEMI { Set(id, e) }
-| WHILE LPAR e=expression RPAR BEGIN instrlist=list(instruction) END { While(e, instrlist) }
-| IF LPAR e=expression RPAR BEGIN instrlist=list(instruction) END elseblock=option(else_block) 
+| WHILE LPAR e=expression RPAR BEGIN instrlist=list(instr) END { While(e, instrlist) }
+| IF LPAR e=expression RPAR BEGIN instrlist=list(instr) END elseblock=option(else_block) 
   {
     match elseblock with
     | None ->    If(e, instrlist, [])
     | Some block ->  If(e, instrlist, block) 
   }
 | RETURN e=expression SEMI { Return(e) }
-| expression SEMI { Expr(e) }
+| e=expression SEMI { Expr(e) }
 ;
 
 
 else_block: (*renvoie une liste d'instructions*)
-| ELSE BEGIN instrlist=list(instruction) END { instrlist }
-| ELSE IF LPAR e=expression RPAR BEGIN instrlist=list(instruction) END elseblock=option(else_block)
+| ELSE BEGIN instrlist=list(instr) END { instrlist }
+| ELSE IF LPAR e=expression RPAR BEGIN instrlist=list(instr) END elseblock=option(else_block)
   { match elseblock with
     | None ->    [If(e, instrlist, [])]
     | Some block ->  [If(e, instrlist, block)] }
