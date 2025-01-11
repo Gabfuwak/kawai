@@ -1,11 +1,11 @@
-|                      | kawalexer | kawaparser                               | typechecker                              | interpreter                              |
-| -------------------- | --------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
-| Arithmétique         | OK        | OK                                       | OK                                       | OK                                       |
-| Variables            | OK        | OK                                       | OK                                       | OK                                       |
-| Instructions         | OK        | else/if<br>while<br>print(int/bool) only | else/if<br>while<br>print(int/bool) only | else/if<br>while<br>print(int/bool) only |
-| Classes et attributs | OK        | OK                                       | OK                                       | OK                                       |
-| Méthodes             |           |                                          |                                          |                                          |
-| Héritage             |           |                                          |                                          |                                          |
+|                      | kawalexer | kawaparser | typechecker | interpreter |
+| -------------------- | --------- | ---------- | ----------- | ----------- |
+| Arithmétique         | OK        | OK         | OK          | OK          |
+| Variables            | OK        | OK         | OK          | OK          |
+| Instructions         | OK        | OK         | OK          | OK          |
+| Classes et attributs | OK        | OK         | OK          | OK          |
+| Méthodes             | OK        | OK         | OK          | OK          |
+| Héritage             |           |            |             |             |
 
 # Extensions
 

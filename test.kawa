@@ -1,37 +1,40 @@
-var int x;
-var bool b;
-
-class point {
-  attribute int x;
-  attribute int y;
-}
-
-class colored_point {
-  attribute int r;
-  attribute int g;
-  attribute int b;
-  attribute point pos;
+class calculator {
+  attribute int memory;
+  
+  method void constructor(int initial) {
+    this.memory = initial;
+  }
+  
+  method void store(int val) {
+    this.memory = val;
+  }
+  
+  method int add(int x) {
+    var int result;
+    result = this.memory + x;
+    return result;
+  }
+  
+  method int compute(int x, int y) {
+    this.store(x);
+    return this.add(y);
+  }
 }
 
 main {
-  // Test object creation and field access
-  pos = new point;
-  pos.x = 10;
-  pos.y = 20;
-  print(pos.x);
-  print(pos.y);
+  // Test constructor with initial value
+  calc = new calculator(0);
   
-  // Test nested object creation and field access
-  cp = new colored_point;
-  cp.r = 255;
-  cp.g = 128;
-  cp.b = 0;
-  cp.pos = new point;
-  cp.pos.x = 100;
-  cp.pos.y = 200;
-  print(cp.r);
-  print(cp.pos.y);
+  // Test method with void return
+  calc.store(5);
+  
+  // Test method with return value and local var
+  print(calc.add(3));  // Should print 8
+  
+  // Test method that calls other methods
+  print(calc.compute(10, 7));  // Should print 17
+  
+  // Test multiple method calls in one expression
+  calc.store(calc.add(5));
+  print(calc.add(0));  // Should print 20
 }
-
-
-

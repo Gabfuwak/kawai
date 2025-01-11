@@ -24,7 +24,14 @@ let exec_prog (p: program): unit =
   List.iter (fun cls_def -> Hashtbl.add cenv cls_def.class_name cls_def) p.classes;
   
   let rec eval_call f this args =
-    failwith "eval_call not implemented"
+    let method_scope = Hashtbl.create 8 in
+    Hashtbl.add method_scope "this" (VObj this);
+    List.iter2 (fun arg_val (arg_name, _) -> Hashtbl.add method_scope arg_name arg_val;) args f.params;
+    List.iter (fun (lvar, _) -> Hashtbl.add method_scope lvar Null) f.locals;
+    try 
+      exec_seq f.code method_scope;
+      Null
+    with Return v -> v
 
   and exec_seq s lenv =
     let rec evali e lenv = match eval e lenv with
@@ -92,7 +99,24 @@ let exec_prog (p: program): unit =
           let fields = Hashtbl.create 16 in
           List.iter (fun (attr_name, _) -> Hashtbl.add fields attr_name Null) cls.attributes;
           VObj {cls=class_name; fields=fields}
-      | NewCstr(cls, args) -> failwith "TODO: implement constructor interpretation"
+      | NewCstr(class_name, args) -> (
+          let cls = try Hashtbl.find cenv class_name
+          with Not_found -> raise (Error ("Unknown class: \"" ^ class_name ^ "\""));
+          in
+
+          let fields = Hashtbl.create 16 in
+          let evaluated_args = List.map (fun arg -> eval arg lenv) args in
+
+          List.iter (fun (attr_name, _) -> Hashtbl.add fields attr_name Null;) cls.attributes;
+          
+          let ret_obj = {cls=class_name; fields=fields} in
+           
+          let _ = eval_call (List.find (fun meth -> meth.method_name = "constructor") cls.methods) ret_obj evaluated_args in
+
+          VObj ret_obj
+
+
+      )
       | Get(Field(e, f)) ->(
           let obj = match eval e lenv with
             | VObj o -> o
@@ -102,7 +126,19 @@ let exec_prog (p: program): unit =
            with Not_found -> raise (Error ("unknown field " ^ f))
            )
         )
-      | _ -> raise (Error "Unknown operation (main eval)"); 
+      | MethCall(obj_expr, method_name, args) -> (
+          match eval obj_expr lenv with
+          | VObj obj -> (
+              let class_def = Hashtbl.find cenv obj.cls in
+              let method_def = List.find 
+              (fun m -> m.method_name = method_name) 
+              class_def.methods in
+              let evaluated_args = List.map (fun arg -> eval arg lenv) args in
+              eval_call method_def obj evaluated_args
+          )
+          | _ -> raise (Error "Method call on non-object value")
+      )
+    | _ -> raise (Error "Unknown operation (main eval)"); 
       
     in
   
@@ -144,6 +180,11 @@ let exec_prog (p: program): unit =
             exec_seq block lenv;
           done
         )
+      | Expr e -> let _ = eval e lenv in ()
+      | Return e ->
+          raise (Return (eval e lenv))
+
+          
       | _ -> failwith "case not implemented in exec"
     and exec_seq s lenv = 
       List.iter (fun i -> exec i lenv) s

@@ -63,11 +63,64 @@ let typecheck_prog p =
         | _ -> failwith "To be implemented";
     )
     | New(class_name) -> 
-        try 
+        try ( 
           let _ = Env.find cenv class_name in
           TClass class_name
+        )
         with Not_found -> error("Class \"" ^ class_name ^ "\" does not exist." );
-    | NewCstr(class_name, _) -> error("TODO: implement constructors");
+    | NewCstr(class_name, args) -> (
+        try(
+          let class_definition = Env.find cenv class_name in
+          try (
+            let method = List.find (fun method_definition -> 
+              method_definition.method_name = "constructor") class_definition.methods in
+            
+            try (
+              List.iter2 (fun arg (_, arg_exp_type) -> 
+                check arg arg_exp_type tenv cenv
+              ) args method.params;
+              
+              if method.return <> TVoid then
+                error("Constructor of class \"" ^ class_name ^ "\" must return void");
+                
+              TClass class_name 
+            ) with Invalid_argument _ -> 
+              error("Constructor of class \"" ^ class_name ^ "\" expects " ^ 
+                    string_of_int (List.length method.params) ^ " arguments but got " ^ 
+                    string_of_int (List.length args))
+
+          ) with Not_found -> 
+            error("No constructor method defined for class \"" ^ class_definition.class_name ^ "\".")
+        ) with Not_found -> 
+          error("Class \"" ^ class_name ^ "\" does not exist.")
+    )
+    | MethCall(obj_expr, method_name, args) ->(
+        let obj_type = type_expr obj_expr tenv cenv in
+        match obj_type with
+        | TClass class_name ->(
+          try ( 
+            let class_definition = Env.find cenv class_name in
+            try (
+              let method = List.find (fun method_definition -> 
+                method_definition.method_name = method_name) class_definition.methods in
+              
+              try (
+                List.iter2 (fun arg (_, arg_exp_type) -> 
+                  check arg arg_exp_type tenv cenv
+                ) args method.params;
+                
+                method.return
+              ) with Invalid_argument _ ->
+                error("Method \"" ^ method_name ^ "\" expects " ^ 
+                      string_of_int (List.length method.params) ^ " arguments but got " ^ 
+                      string_of_int (List.length args))
+            ) with Not_found -> 
+              error("No method called \"" ^ method_name ^ "\" is a member of class \"" ^ class_name ^ "\".")
+          ) with Not_found -> 
+            error("No class names \"" ^ class_name ^ "\".")
+        )
+        | _ -> error("Tried to call method on non-object type")
+    )
     | _ -> failwith "case not implemented in type_expr"
 
   and type_mem_access m tenv cenv = match m with
@@ -80,7 +133,7 @@ let typecheck_prog p =
             try snd (List.find (fun elem -> fst elem = id) cls.attributes) with Not_found -> error("Undefined attribute \"" ^ id ^ "\" for class " ^ class_name);
         | _ -> error("Cannot access field of non-object type");
         )
-        )
+        
         
     | _ -> failwith "case not implemented in type_mem_access"
   in
@@ -104,9 +157,34 @@ let typecheck_prog p =
         check cond TBool tenv cenv;
         check_seq block ret tenv cenv;
     )
+    | Return e -> 
+      if ret = TVoid then
+          error "Return statement in void method"
+      else
+          check e ret tenv cenv
     | _ -> failwith "case not implemented in check_instr"
   and check_seq s ret tenv cenv =
     List.iter (fun i -> check_instr i ret tenv cenv) s
   in
 
-  check_seq p.main TVoid tenv cenv
+let rec check_method class_name meth tenv cenv =
+  let tenv = add_env meth.params tenv in
+  let tenv = add_env meth.locals tenv in
+  let tenv = Env.add "this" (TClass class_name) tenv in
+  check_seq meth.code meth.return tenv cenv
+
+and check_class cls cenv =
+  let tenv = add_env cls.attributes Env.empty in
+
+  List.iter (fun (_, typ) ->
+    match typ with
+    | TClass class_name -> 
+        try Env.find class_name cenv with Not_found -> error("Class")
+    | _ -> ()
+  ) cls.attributes
+  
+  List.iter (fun meth -> check_method cls.class_name meth tenv cenv) cls.methods
+in
+
+List.iter (fun cls -> check_class cls cenv) p.classes;
+check_seq p.main TVoid tenv cenv

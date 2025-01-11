@@ -56,12 +56,12 @@ var_decl:
 ;
 
 class_def:
-| CLASS name=IDENT (*TODO: option(extends_clause)*) BEGIN attributes=list(attr_decl) (*methods=list(method_def)*)  END 
+| CLASS name=IDENT (*TODO: option(extends_clause)*) BEGIN attributes=list(attr_decl) methods=list(method_def)  END 
     { 
       {
         class_name = name;
         attributes = attributes;
-        methods = [](*methods*);
+        methods = methods;
         parent = None; (*todo: inheritance*)
       }
     }
@@ -91,7 +91,7 @@ method_def:
     }
 ;
 
-(*TODO, return (string, typ)*)
+(*returns (string, typ)*)
 method_param:
 | t=typ id=IDENT { (id, t) } 
 ;
