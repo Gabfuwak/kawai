@@ -99,24 +99,19 @@ let exec_prog (p: program): unit =
           let fields = Hashtbl.create 16 in
           List.iter (fun (attr_name, _) -> Hashtbl.add fields attr_name Null) cls.attributes;
           VObj {cls=class_name; fields=fields}
-      | NewCstr(class_name, args) -> (
-          let cls = try Hashtbl.find cenv class_name
-          with Not_found -> raise (Error ("Unknown class: \"" ^ class_name ^ "\""));
+      | NewCstr(class_name, args) -> 
+          let obj = match eval (New class_name) lenv with
+              | VObj o -> o
+              | _ -> assert false
           in
-
-          let fields = Hashtbl.create 16 in
+          let cls = Hashtbl.find cenv class_name in
           let evaluated_args = List.map (fun arg -> eval arg lenv) args in
-
-          List.iter (fun (attr_name, _) -> Hashtbl.add fields attr_name Null;) cls.attributes;
-          
-          let ret_obj = {cls=class_name; fields=fields} in
-           
-          let _ = eval_call (List.find (fun meth -> meth.method_name = "constructor") cls.methods) ret_obj evaluated_args in
-
-          VObj ret_obj
-
-
-      )
+          let _ = eval_call 
+              (List.find (fun meth -> meth.method_name = "constructor") cls.methods) 
+              obj 
+              evaluated_args 
+          in
+          VObj obj
       | Get(Field(e, f)) ->(
           let obj = match eval e lenv with
             | VObj o -> o
