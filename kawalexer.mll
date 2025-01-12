@@ -23,6 +23,7 @@
       "method",    METHOD;
       "this",      THIS;
       "new",       NEW;
+      "extends",   EXTENDS;
     ] ;
   fun s ->
     try  Hashtbl.find h s

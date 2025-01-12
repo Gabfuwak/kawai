@@ -5,7 +5,7 @@
 
 %}
 
-%token INT_TYPE BOOL_TYPE VOID VAR CLASS ATTRIBUTE METHOD THIS NEW
+%token INT_TYPE BOOL_TYPE VOID VAR CLASS ATTRIBUTE METHOD THIS NEW EXTENDS
 %token <int> INT
 %token <string> IDENT
 %token <bool> BOOL
@@ -56,23 +56,20 @@ var_decl:
 ;
 
 class_def:
-| CLASS name=IDENT (*TODO: option(extends_clause)*) BEGIN attributes=list(attr_decl) methods=list(method_def)  END 
+| CLASS name=IDENT parent=option(extends_clause) BEGIN attributes=list(attr_decl) methods=list(method_def)  END 
     { 
       {
         class_name = name;
         attributes = attributes;
         methods = methods;
-        parent = None; (*todo: inheritance*)
+        parent = parent;
       }
     }
 ;
 
-(*
-TODO: inheritance
 extends_clause:
 | EXTENDS parent_name=IDENT {parent_name}
 ;
-*)
 
 attr_decl:
 | ATTRIBUTE t=typ id=IDENT SEMI { (id, t) }

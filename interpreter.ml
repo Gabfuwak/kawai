@@ -59,7 +59,7 @@ let exec_prog (p: program): unit =
           match op, v with
           | Opp, VInt v -> VInt(-v)
           | Not, VBool v -> VBool(not v)
-          | _ -> raise (Error "Unkown operation (unop eval) ");
+          | _ -> raise (Error "Unkown operation in unop eval (should be unreachable) ");
       )
       | Binop (op, e1, e2) ->(
           let v1 = eval e1 lenv in
@@ -86,18 +86,24 @@ let exec_prog (p: program): unit =
           | And, VBool b1, VBool b2 -> VBool(b1 && b2)
           | Or, VBool b1, VBool b2 -> VBool(b1 || b2)
 
-          | _ -> raise (Error "Unknown operation (binop eval)");
+          | _ -> raise (Error "Unknown operation in binop eval (should be unreachable)");
       )
       | This -> ( 
           try Hashtbl.find lenv "this"
           with Not_found -> raise (Error "\"this\" called outside of class context");
       )
-      | New class_name ->
-          let cls = try Hashtbl.find cenv class_name
-          with Not_found -> raise (Error ("Unknown class: \"" ^ class_name ^ "\""));
+      | New class_name -> 
+         let rec add_inherited_attributes cls_name cls_fields = 
+            let cls = try Hashtbl.find cenv cls_name
+            with Not_found -> raise (Error ("Unknown class: \"" ^ class_name ^ "\""));
+            in
+            List.iter (fun (attr_name, _) -> Hashtbl.add cls_fields attr_name Null;) cls.attributes;
+            match cls.parent with
+            | None -> ()
+            | Some name -> add_inherited_attributes name cls_fields;
           in
           let fields = Hashtbl.create 16 in
-          List.iter (fun (attr_name, _) -> Hashtbl.add fields attr_name Null) cls.attributes;
+          add_inherited_attributes class_name fields;
           VObj {cls=class_name; fields=fields}
       | NewCstr(class_name, args) -> 
           let obj = match eval (New class_name) lenv with
@@ -122,18 +128,26 @@ let exec_prog (p: program): unit =
            )
         )
       | MethCall(obj_expr, method_name, args) -> (
+          let rec find_meth class_name method_name =
+            let class_def = Hashtbl.find cenv class_name in
+            let method_def = List.find_opt (fun m -> m.method_name = method_name) class_def.methods in
+            
+            match class_def.parent, method_def with
+            | _, Some meth -> meth
+            | Some parent_name, _  -> find_meth parent_name method_name 
+            | _, _  -> raise (Error ("Method \"" ^ method_name ^ "\" is not defined."));
+            
+          in
+
           match eval obj_expr lenv with
           | VObj obj -> (
-              let class_def = Hashtbl.find cenv obj.cls in
-              let method_def = List.find 
-              (fun m -> m.method_name = method_name) 
-              class_def.methods in
+              let method_def = find_meth obj.cls method_name in
               let evaluated_args = List.map (fun arg -> eval arg lenv) args in
               eval_call method_def obj evaluated_args
           )
           | _ -> raise (Error "Method call on non-object value")
       )
-    | _ -> raise (Error "Unknown operation (main eval)"); 
+    | _ -> raise (Error "Unknown operation in main eval (should be unreachable)"); 
       
     in
   
@@ -180,7 +194,7 @@ let exec_prog (p: program): unit =
           raise (Return (eval e lenv))
 
           
-      | _ -> failwith "case not implemented in exec"
+      | _ -> failwith "case not implemented in exec (should be unreachable)"
     and exec_seq s lenv = 
       List.iter (fun i -> exec i lenv) s
     in
