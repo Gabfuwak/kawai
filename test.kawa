@@ -1,40 +1,38 @@
 class calculator {
-  attribute int memory;
+  int memory;
   
-  method void constructor(int initial) {
+  void constructor(int initial) {
     this.memory = initial;
   }
   
-  method void store(int val) {
+  void store(int val) {
     this.memory = val;
   }
   
-  method int add(int x) {
-    var int result;
+  int add(int x) {
+    int result;
     result = this.memory + x;
     return result;
   }
   
-  method int compute(int x, int y) {
+  int compute(int x, int y) {
+    int temp;
     this.store(x);
+    int other_temp;
     return this.add(y);
   }
 }
 
 main {
-  // Test constructor with initial value
+  
   calc = new calculator(0);
   
-  // Test method with void return
   calc.store(5);
   
-  // Test method with return value and local var
   print(calc.add(3));  // Should print 8
   
-  // Test method that calls other methods
   print(calc.compute(10, 7));  // Should print 17
   
-  // Test multiple method calls in one expression
   calc.store(calc.add(5));
-  print(calc.add(0));  // Should print 20
+  print(calc.add(0));  // Should print 15
 }

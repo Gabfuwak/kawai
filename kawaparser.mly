@@ -5,7 +5,7 @@
 
 %}
 
-%token INT_TYPE BOOL_TYPE VOID VAR CLASS ATTRIBUTE METHOD THIS NEW EXTENDS
+%token INT_TYPE BOOL_TYPE VOID CLASS THIS NEW EXTENDS
 %token <int> INT
 %token <string> IDENT
 %token <bool> BOOL
@@ -51,13 +51,52 @@ typ:
 | id=IDENT {TClass id}
 ;
 
+(* Definition de variable, attribut ou methode. Tout ce qui a un type quoi. On met ça la pour eviter les conflits avec les declarations simplifiées *)
+typed_def: 
+| t=typ id=IDENT SEMI { VarAttr (id, t) }
+| t=typ id=IDENT LPAR params=separated_list(COMMA, method_param) RPAR BEGIN body=list(method_line) END
+    {
+      let (variables, code) = List.partition(
+        function MemberVar _ -> true | MemberInstr _ -> false
+      ) body in
+
+      let variables = List.map (function MemberVar v -> v | _ -> failwith "unreachable") variables in
+      let code = List.map (function MemberInstr i -> i | _ -> failwith "unreachable") code in
+
+      Meth {
+        method_name = id;
+        code = code;
+        params = params;
+        locals = variables;
+        return = t;
+      }
+    }
+;
+
+(*meme idée que class_memeber, sauf que au lieu d'avoir des attr et des method_def, on a des variables locales et des instructions*)
+method_line:
+| v=var_decl { MemberVar v }
+| i=instr { MemberInstr i }
+;
+
 var_decl:
-| VAR t=typ id=IDENT SEMI { (id, t) }
+| d=typed_def { 
+    match d with 
+    | VarAttr v -> v 
+    | Meth _ -> failwith "unreachable" 
+  } 
 ;
 
 class_def:
-| CLASS name=IDENT parent=option(extends_clause) BEGIN attributes=list(attr_decl) methods=list(method_def)  END 
+| CLASS name=IDENT parent=option(extends_clause) BEGIN members=list(typed_def)  END 
     { 
+      let (attributes, methods) = List.partition(
+        function VarAttr _ -> true | Meth _ -> false
+      ) members in
+      
+      let attributes = List.map (function VarAttr a -> a | Meth _ -> failwith "unreachable") attributes in
+      let methods = List.map (function Meth m -> m | VarAttr _ -> failwith "unreachable") methods in
+
       {
         class_name = name;
         attributes = attributes;
@@ -67,26 +106,12 @@ class_def:
     }
 ;
 
+
 extends_clause:
 | EXTENDS parent_name=IDENT {parent_name}
 ;
 
-attr_decl:
-| ATTRIBUTE t=typ id=IDENT SEMI { (id, t) }
-;
 
-method_def:
-| METHOD t=typ id=IDENT LPAR params=separated_list(COMMA, method_param) RPAR BEGIN variables=list(var_decl) code=list(instr) END
-    {
-      {
-        method_name = id;
-        code = code;
-        params = params;
-        locals = variables;
-        return = t;
-      }
-    }
-;
 
 (*returns (string, typ)*)
 method_param:

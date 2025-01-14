@@ -94,3 +94,13 @@ type program = {
     globals: (string * typ) list;
     main: seq;
   }
+
+
+(*type utilisé dans le parseur pour les declarations simplifiées*)
+type typed_def =
+    | VarAttr of (string * typ)
+    | Meth of method_def
+
+type method_line =
+    | MemberVar of (string * typ)
+    | MemberInstr of instr

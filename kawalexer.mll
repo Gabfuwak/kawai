@@ -17,10 +17,7 @@
       "int",       INT_TYPE;
       "bool",      BOOL_TYPE;
       "void",      VOID;
-      "var",       VAR;
       "class",     CLASS;
-      "attribute", ATTRIBUTE;
-      "method",    METHOD;
       "this",      THIS;
       "new",       NEW;
       "extends",   EXTENDS;
