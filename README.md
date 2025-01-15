@@ -137,4 +137,56 @@ Ma solution d'implementation pour les declaration simplifiées a aussi eu pour e
     return this.add(y);
   }
 ```
+Note: Les declaration melangées ne marchent pas pour la main function. Je n'ai pas fait de cas particulier pour celle ci.
+
+## 4 - Did you mean 'recursion'?
+On ajoute des suggestions dans les messages d'erreur du typechecker pour aider les utilisateurs. Pour chaque type d'erreur (classe/méthode/attribut/variable inconnue), on suggère l'identificateur le plus proche en calculant la distance de Levenshtein.
+
+L'algorithme de Levenshtein calcule le nombre minimum d'opérations (insertions, suppressions, substitutions) nécessaires pour transformer une chaîne en une autre. Par exemple, la distance entre "bark" et "barkk" est de 1 (une insertion).
+
+On crée des fonctions spécialisées de suggestion selon le contexte :
+```ocaml
+let suggest_class word cenv = (* suggère une classe similaire *)
+let suggest_attr_or_var word cls_name_opt tenv cenv = (* suggère un attribut/variable *)
+let suggest_meth word cls_name cenv = (* suggère une méthode *)
+```
+
+La suggestion prend en compte l'héritage : si on cherche un attribut/méthode, on regarde aussi dans les classes parentes. Pour les attributs/variables, on regarde à la fois les attributs de classe ET les variables du scope actuel.
+
+Les suggestions sont ajoutées dans tous les messages d'erreur pertinents :
+
+- Variables non définies :
+```ocaml
+error("Undefined variable \"" ^ x ^ "\". Did you mean \"" ^ 
+      suggest_attr_or_var x None tenv cenv ^ "\"?")
+```
+
+- Champs non trouvés :
+```ocaml
+error("Field '" ^ field_name ^ "' not found in class \"" ^ class_name ^ 
+      "\". Did you mean \"" ^ suggest_attr_or_var field_name (Some class_name) tenv cenv ^ "\"?")
+```
+
+- Méthodes non trouvées :
+```ocaml
+error("Method '" ^ method_name ^ "' not found in class \"" ^ cls_name ^ 
+      "\". Did you mean \"" ^ suggest_meth method_name cls_name cenv ^ "\"?")
+```
+
+- Classes inconnues :
+```ocaml
+error("Class \"" ^ class_name ^ "\" does not exist. Did you mean \"" ^ 
+      suggest_class class_name cenv ^ "\"?")
+```
+
+Exemples d'erreurs avec suggestions :
+```java
+var Anmal pet;  // Error: Class "Anmal" does not exist. Did you mean "Animal"?
+dog.barkk();    // Error: Method 'barkk' not found in class "Dog". Did you mean "bark"?
+print(doog);    // Error: Undefined variable "doog". Did you mean "dog"?
+```
+
+Les suggestions ne sont faites que si la distance est suffisamment petite (≤3 pour les classes, ≤2 pour les méthodes/attributs) pour éviter les fausses suggestions. Cette différence de seuil s'explique par le fait qu'il y a généralement moins de classes que de méthodes/attributs, donc on peut se permettre d'être plus permissif.
+
+Le code de test fourni permet de vérifier tous les cas d'erreurs possibles et leurs suggestions associées. Chaque erreur peut être testée individuellement en commentant les autres.
 
