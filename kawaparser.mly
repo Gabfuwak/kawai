@@ -40,7 +40,7 @@
 
 program:
 | vlist=list(var_decl) classes=list(class_def) MAIN BEGIN main=list(instr) END EOF
-    { {classes=classes; globals=vlist; main} }
+    { {classes=classes; globals=(List.flatten vlist); main} } (*flatten pour gerer les definitions en serie*)
 ;
 
 
@@ -53,17 +53,25 @@ typ:
 
 (* Definition de variable, attribut ou methode. Tout ce qui a un type quoi. On met ça la pour eviter les conflits avec les declarations simplifiées *)
 typed_def: 
-| t=typ id=IDENT SEMI { VarAttr (id, t) }
-| t=typ id=IDENT LPAR params=separated_list(COMMA, method_param) RPAR BEGIN body=list(method_line) END
+| t=typ id_list=separated_nonempty_list(COMMA, IDENT) SEMI 
+    { VarAttr_list (List.map (fun id -> (id, t)) id_list) }
+| t=typ id=IDENT LPAR params=separated_list(COMMA, method_param) RPAR 
+  BEGIN body=list(method_line) END
     {
+      (* body est maintenant une liste de listes qu'il faut aplatir *)
+      let flat_body = List.flatten body in
       let (variables, code) = List.partition(
         function MemberVar _ -> true | MemberInstr _ -> false
-      ) body in
+      ) flat_body in
 
-      let variables = List.map (function MemberVar v -> v | _ -> failwith "unreachable") variables in
-      let code = List.map (function MemberInstr i -> i | _ -> failwith "unreachable") code in
+      let variables = List.map (function 
+        | MemberVar v -> v 
+        | _ -> failwith "unreachable") variables in
+      let code = List.map (function 
+        | MemberInstr i -> i 
+        | _ -> failwith "unreachable") code in
 
-      Meth {
+      Meth {  (* Enlever les crochets ici *)
         method_name = id;
         code = code;
         params = params;
@@ -75,27 +83,32 @@ typed_def:
 
 (*meme idée que class_memeber, sauf que au lieu d'avoir des attr et des method_def, on a des variables locales et des instructions*)
 method_line:
-| v=var_decl { MemberVar v }
-| i=instr { MemberInstr i }
+| t=typ id_list=separated_nonempty_list(COMMA, IDENT) SEMI 
+    { List.map (fun id -> MemberVar (id, t)) id_list }
+| i=instr { [MemberInstr i] }
 ;
 
 var_decl:
 | d=typed_def { 
     match d with 
-    | VarAttr v -> v 
-    | Meth _ -> failwith "unreachable" 
+    | VarAttr_list vars -> vars
+    | _ -> failwith "unreachable" 
   } 
 ;
 
 class_def:
-| CLASS name=IDENT parent=option(extends_clause) BEGIN members=list(typed_def)  END 
+| CLASS name=IDENT parent=option(extends_clause) BEGIN members=list(typed_def) END 
     { 
-      let (attributes, methods) = List.partition(
-        function VarAttr _ -> true | Meth _ -> false
+      let (attributes, methods) = List.partition (
+        function VarAttr_list _ -> true | Meth _ -> false
       ) members in
       
-      let attributes = List.map (function VarAttr a -> a | Meth _ -> failwith "unreachable") attributes in
-      let methods = List.map (function Meth m -> m | VarAttr _ -> failwith "unreachable") methods in
+      let attributes = List.flatten (List.map (function 
+        | VarAttr_list vars -> vars 
+        | _ -> failwith "unreachable") attributes) in
+      let methods = List.map (function 
+        | Meth m -> m 
+        | _ -> failwith "unreachable") methods in
 
       {
         class_name = name;
@@ -105,7 +118,6 @@ class_def:
       }
     }
 ;
-
 
 extends_clause:
 | EXTENDS parent_name=IDENT {parent_name}

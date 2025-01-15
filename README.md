@@ -190,3 +190,46 @@ Les suggestions ne sont faites que si la distance est suffisamment petite (≤3 
 
 Le code de test fourni permet de vérifier tous les cas d'erreurs possibles et leurs suggestions associées. Chaque erreur peut être testée individuellement en commentant les autres.
 
+## 5 - Déclarations en série
+On permet de déclarer plusieurs variables/attributs du même type sur une seule ligne :
+```c
+int x, y, z;          // Variables globales
+int result, memory;   // Attributs de classe
+int temp, partial;    // Variables locales
+```
+
+Cet ajout a été grandement simplifié par l'implementation précédemment des declarations simplifiées.
+
+Le changement principal est la modification du type `VarAttr` pour qu'il supporte une liste de variables :
+```ocaml
+type typed_def =
+  | VarAttr_list of (string * typ) list
+  | Meth of method_def
+```
+
+On modifie ensuite la grammaire pour accepter des listes d'identifiants dans les déclarations :
+```ocaml
+typed_def: 
+| t=typ id_list=separated_nonempty_list(COMMA, IDENT) SEMI 
+    { VarAttr_list (List.map (fun id -> (id, t)) id_list) }
+```
+
+Cette modification impacte plusieurs règles qui doivent maintenant gérer des listes :
+```ocaml
+method_line:
+| t=typ id_list=separated_nonempty_list(COMMA, IDENT) SEMI 
+    { List.map (fun id -> MemberVar (id, t)) id_list }
+| i=instr { [MemberInstr i] }
+
+class_def:
+| CLASS name=IDENT parent=option(extends_clause) BEGIN members=list(typed_def) END 
+    { 
+      (* ... *)
+      let attributes = List.flatten (List.map (function 
+        | VarAttr_list vars -> vars 
+        | _ -> failwith "unreachable") attributes) in
+      (* ... *)
+    }
+```
+
+Ce changement ne nécessite pas de modifications du typechecker ou de l'interpréteur car les déclarations en série sont "dépliées" par le parser en déclarations individuelles avant d'atteindre ces composants.
