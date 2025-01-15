@@ -1,38 +1,37 @@
-class calculator {
-  int memory;
-  
-  void constructor(int initial) {
-    this.memory = initial;
-  }
-  
-  void store(int val) {
-    this.memory = val;
-  }
-  
-  int add(int x) {
-    int result;
-    result = this.memory + x;
-    return result;
-  }
-  
-  int compute(int x, int y) {
-    int temp;
-    this.store(x);
-    int other_temp;
-    return this.add(y);
-  }
+int myvar;
+dog mydog;
+    animal myanimal;
+
+class animal {
+    int age;
+    
+    void constructor(int age) {
+        this.age = age;
+    }
+}
+
+class dog extends animal {
+    int borklevel;
+
+    void constructor(int age, int borklevel) {
+        this.age = age;
+        this.borklevel = borklevel;
+    }
+
+    void bark() {
+        print(this.borklevel);
+    }
 }
 
 main {
-  
-  calc = new calculator(0);
-  
-  calc.store(5);
-  
-  print(calc.add(3));  // Should print 8
-  
-  print(calc.compute(10, 7));  // Should print 17
-  
-  calc.store(calc.add(5));
-  print(calc.add(0));  // Should print 15
+    mydog = new dg(5, 10);
+    print(mydog.borklevel);
+    
+    mydog.bark();
+    print(mydog.age);
+    
+    myanimal = new animal(5);
+    
+    myvar = 42;
+    print(myvar);
 }
